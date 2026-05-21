@@ -15,7 +15,7 @@ export default function HomeScreen({ onNavigate }: Props) {
         <Text style={styles.buttonText}>Jugar</Text>
       </Pressable>
 
-      <Pressable style={styles.secondaryButton} /*onPress={() => onNavigate("sensors")}*/>
+      <Pressable style={styles.secondaryButton} onPress={() => onNavigate("sensors")}>
         <Text style={styles.buttonText}>Ver datos de sensores</Text>
       </Pressable>
     </View>
