@@ -9,6 +9,7 @@ const BALL_SIZE = 26;
 const GOAL_SIZE = 32;
 const SPEED = 2.5;
 const START = { x: 20, y: 20 };
+const SHAKE_THRESHOLD = 2.8;
 
 type Rect = {
   x: number;
@@ -31,7 +32,7 @@ export default function MazeGameScreen({ onBack }: Props) {
     { x: 140, y: 210, width: 5, height: 75 },
     { x: 210, y: 70, width: 5, height: 145 },
     { x: 210, y: 280, width: 5, height: 70 },
-    { x: 280, y: 210, width: 5, height: 140 },
+    { x: 280, y: 210, width: 5, height: 70 },
     { x: 70, y: 140, width: 70, height: 5 },
     { x: 70, y: 280, width: 75, height: 5 },
     { x: 140, y: 210, width: 145, height: 5 },
@@ -41,16 +42,21 @@ export default function MazeGameScreen({ onBack }: Props) {
 
   const posRef = useRef(START);
   const wonRef = useRef(false);
+  const stuckRef = useRef(false);
 
   const [ball, setBall] = useState(START);
   const [gyroZ, setGyroZ] = useState(0);
   const [won, setWon] = useState(false);
+  const [stuck, setStuck] = useState(false);
 
   const reset = () => {
     posRef.current = { ...START };
     wonRef.current = false;
+    stuckRef.current = false;
+
     setBall({ ...START });
     setWon(false);
+    setStuck(false);
   };
 
   const isColliding = (ballPos: { x: number; y: number }, wall: Rect) => {
@@ -66,27 +72,12 @@ export default function MazeGameScreen({ onBack }: Props) {
     return walls.some((wall) => isColliding(ballPos, wall));
   };
 
-  const MAX_ROTATION = 12;
-  const ROTATION_SENSITIVITY = 0.6;
-  const [mazeRotation, setMazeRotation] = useState(0);
-
-  const gyroSub = Gyroscope.addListener(({ z }) => {
-    setMazeRotation((prev) => {
-      const next = prev + z * ROTATION_SENSITIVITY;
-
-      return Math.max(
-        -MAX_ROTATION,
-        Math.min(MAX_ROTATION, next)
-      );
-    });
-  });
-
   useEffect(() => {
     Accelerometer.setUpdateInterval(16);
     Gyroscope.setUpdateInterval(100);
 
     const accelSub = Accelerometer.addListener(({ x, y }) => {
-      if (wonRef.current) return;
+      if (wonRef.current || stuckRef.current) return;
 
       const current = posRef.current;
 
@@ -106,31 +97,36 @@ export default function MazeGameScreen({ onBack }: Props) {
         ),
       };
 
-      let next = current;
-
-      if (!hitsAnyWall(nextX)) {
-        next = nextX;
+      if (hitsAnyWall(nextX) || hitsAnyWall(nextY)) {
+        stuckRef.current = true;
+        setStuck(true);
+        return;
       }
 
-      if (!hitsAnyWall(nextY)) {
-        next = nextY;
-      }
-
-      posRef.current = next;
-      setBall({ ...next });
+      posRef.current = nextY;
+      setBall({ ...nextY });
 
       if (
-        next.x < goal.x + GOAL_SIZE &&
-        next.x + BALL_SIZE > goal.x &&
-        next.y < goal.y + GOAL_SIZE &&
-        next.y + BALL_SIZE > goal.y
+        nextY.x < goal.x + GOAL_SIZE &&
+        nextY.x + BALL_SIZE > goal.x &&
+        nextY.y < goal.y + GOAL_SIZE &&
+        nextY.y + BALL_SIZE > goal.y
       ) {
         wonRef.current = true;
         setWon(true);
       }
     });
 
-    const gyroSub = Gyroscope.addListener(({ z }) => setGyroZ(z));
+    const gyroSub = Gyroscope.addListener(({ x, y, z }) => {
+      setGyroZ(z);
+
+      const intensity = Math.abs(x) + Math.abs(y) + Math.abs(z);
+
+      if (stuckRef.current && intensity > SHAKE_THRESHOLD) {
+        stuckRef.current = false;
+        setStuck(false);
+      }
+    });
 
     return () => {
       accelSub.remove();
@@ -143,28 +139,22 @@ export default function MazeGameScreen({ onBack }: Props) {
       <Text style={styles.title}>Laberinto</Text>
 
       <Text style={[styles.message, won && styles.messageWon]}>
-        {won ? "¡Llegaste a la meta!" : "Inclina el celular para mover la bolita"}
+        {won
+          ? "¡Llegaste a la meta!"
+          : stuck
+          ? "¡Te pegaste a una pared! Sacude el celular para despegarte"
+          : "Inclina el celular para mover la bolita"}
       </Text>
 
-      <View style={[styles.board, { width: boardSize, height: boardSize, transform: [{ rotate: `${mazeRotation}deg` }] }]}>
+      <View style={[styles.board, { width: boardSize, height: boardSize, }, ]}>
+        
         <View style={[styles.goal, { left: goal.x, top: goal.y }]} />
-
+        
         {walls.map((wall, index) => (
-          <View
-            key={index}
-            style={[
-              styles.wall,
-              {
-                left: wall.x,
-                top: wall.y,
-                width: wall.width,
-                height: wall.height,
-              },
-            ]}
-          />
+          <View key={index} style={[styles.wall, { left: wall.x, top: wall.y, width: wall.width, height: wall.height, }, ]} />
         ))}
 
-        <View style={[styles.ball, { left: ball.x, top: ball.y }]} />
+        <View style={[styles.ball, stuck && styles.ballStuck, { left: ball.x, top: ball.y }]} />
       </View>
 
       <Pressable style={styles.button} onPress={reset}>
@@ -221,6 +211,9 @@ const styles = StyleSheet.create({
     borderRadius: BALL_SIZE / 2,
     backgroundColor: COLORS.accent,
     position: "absolute",
+  },
+  ballStuck: {
+    backgroundColor: COLORS.danger,
   },
   goal: {
     width: GOAL_SIZE,
