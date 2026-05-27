@@ -66,6 +66,21 @@ export default function MazeGameScreen({ onBack }: Props) {
     return walls.some((wall) => isColliding(ballPos, wall));
   };
 
+  const MAX_ROTATION = 12;
+  const ROTATION_SENSITIVITY = 0.6;
+  const [mazeRotation, setMazeRotation] = useState(0);
+
+  const gyroSub = Gyroscope.addListener(({ z }) => {
+    setMazeRotation((prev) => {
+      const next = prev + z * ROTATION_SENSITIVITY;
+
+      return Math.max(
+        -MAX_ROTATION,
+        Math.min(MAX_ROTATION, next)
+      );
+    });
+  });
+
   useEffect(() => {
     Accelerometer.setUpdateInterval(16);
     Gyroscope.setUpdateInterval(100);
@@ -131,7 +146,7 @@ export default function MazeGameScreen({ onBack }: Props) {
         {won ? "¡Llegaste a la meta!" : "Inclina el celular para mover la bolita"}
       </Text>
 
-      <View style={[styles.board, { width: boardSize, height: boardSize }]}>
+      <View style={[styles.board, { width: boardSize, height: boardSize, transform: [{ rotate: `${mazeRotation}deg` }] }]}>
         <View style={[styles.goal, { left: goal.x, top: goal.y }]} />
 
         {walls.map((wall, index) => (
