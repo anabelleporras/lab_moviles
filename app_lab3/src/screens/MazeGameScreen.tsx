@@ -167,10 +167,6 @@ export default function MazeGameScreen({ onBack }: Props) {
         <View style={[styles.ball, { left: ball.x, top: ball.y }]} />
       </View>
 
-      <Text style={styles.sensorText}>
-        Giroscopio Z: {gyroZ.toFixed(3)} rad/s
-      </Text>
-
       <Pressable style={styles.button} onPress={reset}>
         <Text style={styles.buttonText}>Reiniciar</Text>
       </Pressable>

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { COLORS } from "../constants/Theme";
 
 type Props = {
@@ -7,11 +7,28 @@ type Props = {
 };
 
 export default function HomeScreen({ onNavigate }: Props) {
+  const handlePlay = () => {
+    Alert.alert(
+      "Uso de sensores",
+      "Este juego utiliza el acelerómetro y el giroscopio para detectar el movimiento e inclinación del dispositivo.",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Continuar",
+          onPress: () => onNavigate("game"),
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tilt Maze</Text>
 
-      <Pressable style={styles.button} onPress={() => onNavigate("game")}>
+      <Pressable style={styles.button} onPress={handlePlay}>
         <Text style={styles.buttonText}>Jugar</Text>
       </Pressable>
 
