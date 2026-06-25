@@ -30,7 +30,6 @@ export function LoginScreen({ onNavigateToRegister }: Props) {
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ---- Parte A: Google Sign-In (sin cambios funcionales) ----
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_IOS,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID_ANDROID,
@@ -60,7 +59,6 @@ export function LoginScreen({ onNavigateToRegister }: Props) {
     }
   }, [response, setGoogleUser]);
 
-  // ---- Parte B: inicio de sesión con email/contraseña ----
   async function handleSignIn() {
     const emailError = validateEmail(email);
     const passwordError = validatePassword(password);
@@ -71,7 +69,6 @@ export function LoginScreen({ onNavigateToRegister }: Props) {
     try {
       setLoading(true);
       await signInWithEmail(email.trim(), password);
-      // Si tiene éxito, useAuth actualiza el usuario y App muestra Home.
     } catch (e) {
       setFormError(getAuthErrorMessage(e));
     } finally {
@@ -147,14 +144,12 @@ export function LoginScreen({ onNavigateToRegister }: Props) {
           )}
         </Pressable>
 
-        {/* Separador */}
         <View style={styles.dividerRow}>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <Text style={[typography.caption, { color: colors.textTertiary }]}>o</Text>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* Parte A: Google */}
         <Pressable
           disabled={!request}
           onPress={() => promptAsync()}
