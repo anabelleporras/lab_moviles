@@ -1,4 +1,3 @@
-// App.tsx
 import { useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
@@ -7,6 +6,7 @@ import { useTheme } from "./src/hooks/use-theme";
 import { LoginScreen } from "./src/screens/login";
 import { RegisterScreen } from "./src/screens/register";
 import { HomeScreen } from "./src/screens/home";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -15,7 +15,6 @@ function Root() {
   const theme = useTheme();
   const [screen, setScreen] = useState<"login" | "register">("login");
 
-  // Mientras restauramos la sesión guardada (AsyncStorage), mostramos un splash.
   if (initializing) {
     return (
       <View
@@ -31,12 +30,10 @@ function Root() {
     );
   }
 
-  // Hay sesión -> perfil. (Funciona tanto para Google como para email/password.)
   if (user) {
     return <HomeScreen />;
   }
 
-  // Sin sesión -> login o registro.
   return screen === "login" ? (
     <LoginScreen onNavigateToRegister={() => setScreen("register")} />
   ) : (
@@ -46,8 +43,10 @@ function Root() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Root />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <Root />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
